@@ -17,7 +17,7 @@ from homeassistant.components.sensor import SensorEntity
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.recorder.models import StatisticData, StatisticMetaData
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
+from homeassistant.const import UnitOfEnergy
 from homeassistant.components.recorder.statistics import (
     async_add_external_statistics,
 )
@@ -208,7 +208,7 @@ class MeridianEnergyUsageSensor(SensorEntity):
             name=f"{SENSOR_NAME} (Solar Export)",
             source=DOMAIN,
             statistic_id=f"{DOMAIN}:return_to_grid",
-            unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+            unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         )
         async_add_external_statistics(self.hass, solarMetadata, solarStatistics)
 
@@ -218,7 +218,7 @@ class MeridianEnergyUsageSensor(SensorEntity):
             name=f"{SENSOR_NAME} (Day)",
             source=DOMAIN,
             statistic_id=f"{DOMAIN}:consumption_day",
-            unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+            unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         )
         async_add_external_statistics(self.hass, dayMetadata, dayStatistics)
 
@@ -228,6 +228,6 @@ class MeridianEnergyUsageSensor(SensorEntity):
             name=f"{SENSOR_NAME} (Night)",
             source=DOMAIN,
             statistic_id=f"{DOMAIN}:consumption_night",
-            unit_of_measurement=ENERGY_KILO_WATT_HOUR,
+            unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         )
         async_add_external_statistics(self.hass, nightMetadata, nightStatistics)
