@@ -127,80 +127,81 @@ class MeridianEnergyUsageSensor(SensorEntity):
 
         for row in csv_file:
             # Accessing columns by index in each row
-            if len(row) >= 2:  # Checking if there are at least two columns
-                if row[0] == "HDR":
-                    _LOGGER.debug("HDR line arrived")
-                    continue
-                elif row[0] == "DET":
-                    _LOGGER.debug("DET line arrived")
+            if len(row) < 2:  # Checking if there are at least two columns
+                _LOGGER.warning("Not enough columns in this row")
+                break
+                
+            if row[0] == "HDR":
+                _LOGGER.debug("HDR line arrived")
+                continue
+            elif row[0] == "DET":
+                _LOGGER.debug("DET line arrived")
 
-                # Row definitions from EIEP document 13A (https://www.ea.govt.nz/documents/182/EIEP_13A_Electricity_conveyed_information_for_consumers.pdf)
-                energy_flow_direction = row[6]
-                # refer below for date logic of row[9]
-                read_status = row[11]
-                unit_quantity_active_energy_volume = row[12]
+            # Row definitions from EIEP document 13A (https://www.ea.govt.nz/documents/182/EIEP_13A_Electricity_conveyed_information_for_consumers.pdf)
+            energy_flow_direction = row[6]
+            # refer below for date logic of row[9]
+            read_status = row[11]
+            unit_quantity_active_energy_volume = row[12]
 
-                # Assuming row[9] contains the date in the format 'dd/mm/YYYY HH:MM:SS'
-                read_period_start_date_time = row[9]
+            # Assuming row[9] contains the date in the format 'dd/mm/YYYY HH:MM:SS'
+            read_period_start_date_time = row[9]
 
-                # Assuming tz is your timezone (e.g., pytz.timezone('Your/Timezone'))
-                tz = timezone("Pacific/Auckland")
+            # Assuming tz is your timezone (e.g., pytz.timezone('Your/Timezone'))
+            tz = timezone("Pacific/Auckland")
 
-                # Parse the date string into a datetime object
-                start_date = datetime.strptime(
-                    read_period_start_date_time, "%d/%m/%Y %H:%M:%S"
+            # Parse the date string into a datetime object
+            start_date = datetime.strptime(
+                read_period_start_date_time, "%d/%m/%Y %H:%M:%S"
+            )
+
+            # Localize the datetime object
+            start_date = tz.localize(start_date)
+
+            # Exclude any readings that are at the 59th minute
+            if start_date.minute == 59:
+                continue
+
+            # Round down to the nearest hour as HA can only handle hourly
+            rounded_date = start_date.replace(minute=0, second=0, microsecond=0)
+
+            # Skip any estimated reads
+            if read_status != "RD":
+                _LOGGER.debug("HDR line skipped as its estimated")
+                continue
+
+            # Process solar export channels
+            if energy_flow_direction == "I":
+                solarRunningSum = solarRunningSum + float(
+                    unit_quantity_active_energy_volume
+                )
+                solarStatistics.append(
+                    StatisticData(start=rounded_date, sum=solarRunningSum)
                 )
 
-                # Localize the datetime object
-                start_date = tz.localize(start_date)
-
-                # Exclude any readings that are at the 59th minute
-                if start_date.minute == 59:
-                    continue
-
-                # Round down to the nearest hour as HA can only handle hourly
-                rounded_date = start_date.replace(minute=0, second=0, microsecond=0)
-
-                # Skip any estimated reads
-                if read_status != "RD":
-                    _LOGGER.debug("HDR line skipped as its estimated")
-                    continue
-
-                # Process solar export channels
-                if energy_flow_direction == "I":
-                    solarRunningSum = solarRunningSum + float(
+            # Process regular channels
+            else:
+                # Night rate channel
+                if (
+                    rounded_date.time()
+                    >= datetime.strptime("21:00", "%H:%M").time()
+                    or rounded_date.time()
+                    < datetime.strptime("07:00", "%H:%M").time()
+                ):
+                    nightRunningSum = nightRunningSum + float(
                         unit_quantity_active_energy_volume
                     )
-                    solarStatistics.append(
-                        StatisticData(start=rounded_date, sum=solarRunningSum)
+                    nightStatistics.append(
+                        StatisticData(start=rounded_date, sum=nightRunningSum)
                     )
 
-                # Process regular channels
+                # Day rate channel
                 else:
-                    # Night rate channel
-                    if (
-                        rounded_date.time()
-                        >= datetime.strptime("21:00", "%H:%M").time()
-                        or rounded_date.time()
-                        < datetime.strptime("07:00", "%H:%M").time()
-                    ):
-                        nightRunningSum = nightRunningSum + float(
-                            unit_quantity_active_energy_volume
-                        )
-                        nightStatistics.append(
-                            StatisticData(start=rounded_date, sum=nightRunningSum)
-                        )
-
-                    # Day rate channel
-                    else:
-                        dayRunningSum = dayRunningSum + float(
-                            unit_quantity_active_energy_volume
-                        )
-                        dayStatistics.append(
-                            StatisticData(start=rounded_date, sum=dayRunningSum)
-                        )
-            else:
-                _LOGGER.warning("Not enough columns in this row")
+                    dayRunningSum = dayRunningSum + float(
+                        unit_quantity_active_energy_volume
+                    )
+                    dayStatistics.append(
+                        StatisticData(start=rounded_date, sum=dayRunningSum)
+                    )
 
         solarMetadata = StatisticMetaData(
             has_mean=False,
