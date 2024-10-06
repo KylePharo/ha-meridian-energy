@@ -55,14 +55,13 @@ class MeridianEnergyApi:
 
     def get_data(self):
         """Get data from the API."""
-        # Get todays date
         today = datetime.now().strftime("%d/%m/%Y")
-        seven_days_ago = (datetime.now() - timedelta(days=365)).strftime("%d/%m/%Y")
+        days_ago = (datetime.now() - timedelta(days=365)).strftime("%d/%m/%Y")
 
         response = self._session.get(
             self._url_base
             + "reports/consumption_data/detailed_export?date_from="
-            + seven_days_ago
+            + days_ago
             + "&date_to="
             + today
             + "&all_icps=&download=true"
