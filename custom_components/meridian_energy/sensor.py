@@ -130,7 +130,7 @@ class MeridianEnergyUsageSensor(SensorEntity):
             if len(row) < 2:  # Checking if there are at least two columns
                 _LOGGER.warning("Not enough columns in this row")
                 break
-                
+
             if row[0] == "HDR":
                 _LOGGER.debug("HDR line arrived")
                 continue
