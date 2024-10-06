@@ -146,8 +146,6 @@ class MeridianEnergyUsageSensor(SensorEntity):
                 _LOGGER.debug("HDR line skipped as its estimated")
                 continue
 
-            unit_quantity_active_energy_volume = row[12]
-
             # Assuming row[9] contains the date in the format 'dd/mm/YYYY HH:MM:SS'
             read_period_start_date_time = row[9]
 
@@ -168,6 +166,9 @@ class MeridianEnergyUsageSensor(SensorEntity):
 
             # Round down to the nearest hour as HA can only handle hourly
             rounded_date = start_date.replace(minute=0, second=0, microsecond=0)
+
+            # Only calculate the energy after all checks are complete
+            unit_quantity_active_energy_volume = row[12]
 
             # Process solar export channels
             if energy_flow_direction == "I":
