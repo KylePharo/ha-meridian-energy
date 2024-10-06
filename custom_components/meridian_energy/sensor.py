@@ -139,8 +139,13 @@ class MeridianEnergyUsageSensor(SensorEntity):
 
             # Row definitions from EIEP document 13A (https://www.ea.govt.nz/documents/182/EIEP_13A_Electricity_conveyed_information_for_consumers.pdf)
             energy_flow_direction = row[6]
-            # refer below for date logic of row[9]
+
+            # Skip any estimated reads
             read_status = row[11]
+            if read_status != "RD":
+                _LOGGER.debug("HDR line skipped as its estimated")
+                continue
+
             unit_quantity_active_energy_volume = row[12]
 
             # Assuming row[9] contains the date in the format 'dd/mm/YYYY HH:MM:SS'
@@ -163,11 +168,6 @@ class MeridianEnergyUsageSensor(SensorEntity):
 
             # Round down to the nearest hour as HA can only handle hourly
             rounded_date = start_date.replace(minute=0, second=0, microsecond=0)
-
-            # Skip any estimated reads
-            if read_status != "RD":
-                _LOGGER.debug("HDR line skipped as its estimated")
-                continue
 
             # Process solar export channels
             if energy_flow_direction == "I":
