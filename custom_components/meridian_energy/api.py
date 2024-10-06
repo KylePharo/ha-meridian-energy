@@ -29,7 +29,6 @@ class MeridianEnergyApi:
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
             self._token = soup.find("input", {"name": "authenticity_token"})["value"]
-            _LOGGER.debug(f"Authenticity Token: {self._token}")
             self.login()
         else:
             _LOGGER.error("Failed to retrieve the token page.")
