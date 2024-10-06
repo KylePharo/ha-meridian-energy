@@ -159,12 +159,12 @@ class MeridianEnergyUsageSensor(SensorEntity):
                 read_period_start_date_time, "%d/%m/%Y %H:%M:%S"
             )
 
-            # Localize the datetime object
-            start_date = tz.localize(start_date)
-
-            # Exclude any readings that are at the 59th minute
+            # Exclude any readings that are at the 59th minute (summarised daily totals)
             if start_date.minute == 59:
                 continue
+
+            # Localize the datetime object
+            start_date = tz.localize(start_date)
 
             # Round down to the nearest hour as HA can only handle hourly
             rounded_date = start_date.replace(minute=0, second=0, microsecond=0)
