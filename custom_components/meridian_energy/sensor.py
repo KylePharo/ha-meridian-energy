@@ -183,10 +183,8 @@ class MeridianEnergyUsageSensor(SensorEntity):
             else:
                 # Night rate channel
                 if (
-                    rounded_date.time()
-                    >= datetime.strptime("21:00", "%H:%M").time()
-                    or rounded_date.time()
-                    < datetime.strptime("07:00", "%H:%M").time()
+                    start_date.hour >= 21 or
+                    start_date.hour <= 6
                 ):
                     nightRunningSum = nightRunningSum + float(
                         unit_quantity_active_energy_volume
